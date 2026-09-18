@@ -1,0 +1,8 @@
+{
+  "name": "Sarthak — Government Scheme Discovery Agent",
+  "description": "An AI-powered discovery agent helping Indian citizens find and understand government schemes based on their demographics and socioeconomic status.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
