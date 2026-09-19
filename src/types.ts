@@ -12,7 +12,7 @@ export interface Scheme {
   benefits: string[];
   eligibility: {
     ageRange?: [number, number];
-    gender?: ('Male' | 'Female' | 'All')[];
+    gender?: ('Male' | 'Female' | 'Other' | 'All')[];
     states?: string[]; // 'All' for central
     caste?: ('General' | 'OBC' | 'SC' | 'ST' | 'All')[];
     maxIncome?: number;
