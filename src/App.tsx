@@ -47,8 +47,14 @@ export default function App() {
       const response = await fetch('/api/match-schemes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile: newProfile }),
+        body: JSON.stringify({ profile: newProfile, lang }),
       });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid server response format.');
+      }
+
       const data = await response.json();
       
       if (data.error) {

@@ -94,6 +94,25 @@ function fallbackMatch(profile: DemographicProfile, lang: string = 'en') {
   }).filter(m => m.matchScore > 0);
 }
 
+// Helper to extract JSON from AI response
+function extractJSON(text: string) {
+  try {
+    // Try direct parse first
+    return JSON.parse(text);
+  } catch (e) {
+    // Try to extract from markdown code blocks or find the first '[' or '{'
+    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/[\s\S]*?(\[[\s\S]*\]|\{[\s\S]*\})/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch (innerE) {
+        throw new Error("Could not parse extracted JSON");
+      }
+    }
+    throw new Error("No JSON found in response");
+  }
+}
+
 // API Routes
 app.post("/api/match-schemes", async (req, res) => {
   const { profile, lang = 'en' } = req.body;
@@ -113,7 +132,7 @@ app.post("/api/match-schemes", async (req, res) => {
       3. Return a JSON array of MatchResult objects.
       4. IMPORTANT: The 'matchReason' must be in ${lang === 'hi' ? 'Hindi' : 'English'}.
       
-      Format the response as a strict JSON array.
+      Format the response as a strict JSON array. DO NOT include any text before or after the JSON.
     `;
 
     const interaction = await ai.interactions.create({
@@ -133,7 +152,7 @@ app.post("/api/match-schemes", async (req, res) => {
       }
     });
 
-    const matches = JSON.parse(interaction.output_text || "[]");
+    const matches = extractJSON(interaction.output_text || "[]");
     
     // Enrich with actual scheme data
     const enrichedMatches: MatchResult[] = matches.map((m: any) => ({
