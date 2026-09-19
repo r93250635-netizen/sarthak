@@ -29,6 +29,8 @@ export default function DemographicForm({ onSubmit, initialData, lang }: Props) 
     disability: false
   });
 
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+
   const states = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 
     'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 
@@ -42,12 +44,34 @@ export default function DemographicForm({ onSubmit, initialData, lang }: Props) 
     'Unemployed', 'Small Business Owner', 'Homemaker', 'Retired'
   ];
 
-  const nextStep = () => setStep(s => s + 1);
+  const validateStep = (s: number) => {
+    const newErrors: Record<string, boolean> = {};
+    if (s === 1) {
+      if (formData.age === undefined) newErrors.age = true;
+      if (!formData.gender) newErrors.gender = true;
+      if (!formData.state) newErrors.state = true;
+    } else if (s === 2) {
+      if (!formData.caste) newErrors.caste = true;
+      if (formData.annualIncome === undefined) newErrors.annualIncome = true;
+    } else if (s === 3) {
+      if (!formData.occupation) newErrors.occupation = true;
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const nextStep = () => {
+    if (validateStep(step)) {
+      setStep(s => s + 1);
+    }
+  };
   const prevStep = () => setStep(s => s - 1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData as DemographicProfile);
+    if (validateStep(3)) {
+      onSubmit(formData as DemographicProfile);
+    }
   };
 
   return (
@@ -78,20 +102,24 @@ export default function DemographicForm({ onSubmit, initialData, lang }: Props) 
                 onChange={e => {
                   const val = e.target.value === '' ? undefined : parseInt(e.target.value);
                   setFormData({ ...formData, age: isNaN(val as number) ? undefined : val });
+                  if (errors.age) setErrors({ ...errors, age: false });
                 }}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all ${errors.age ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
                 min="0" max="120"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-500">{t.gender}</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className={`grid grid-cols-3 gap-3 p-1 rounded-2xl ${errors.gender ? 'bg-red-50 border border-red-200' : ''}`}>
                 {['Male', 'Female', 'Other'].map(g => (
                   <button
                     key={g}
                     type="button"
-                    onClick={() => setFormData({ ...formData, gender: g as any })}
+                    onClick={() => {
+                      setFormData({ ...formData, gender: g as any });
+                      if (errors.gender) setErrors({ ...errors, gender: false });
+                    }}
                     className={`py-3 rounded-xl border font-medium transition-all ${formData.gender === g ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
                   >
                     {lang === 'hi' ? (g === 'Male' ? 'पुरुष' : g === 'Female' ? 'महिला' : 'अन्य') : g}
@@ -104,8 +132,11 @@ export default function DemographicForm({ onSubmit, initialData, lang }: Props) 
               <label className="text-sm font-medium text-slate-500">{lang === 'en' ? 'State of Residence' : 'निवास का राज्य'}</label>
               <select 
                 value={formData.state || ''}
-                onChange={e => setFormData({ ...formData, state: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all appearance-none bg-white"
+                onChange={e => {
+                  setFormData({ ...formData, state: e.target.value });
+                  if (errors.state) setErrors({ ...errors, state: false });
+                }}
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all appearance-none bg-white ${errors.state ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
               >
                 <option value="" disabled>{lang === 'en' ? 'Select State' : 'राज्य चुनें'}</option>
                 {states.map(s => <option key={s} value={s}>{s}</option>)}
@@ -120,12 +151,15 @@ export default function DemographicForm({ onSubmit, initialData, lang }: Props) 
             
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-500">{t.caste}</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid grid-cols-2 gap-3 p-1 rounded-2xl ${errors.caste ? 'bg-red-50 border border-red-200' : ''}`}>
                 {['General', 'OBC', 'SC', 'ST'].map(c => (
                   <button
                     key={c}
                     type="button"
-                    onClick={() => setFormData({ ...formData, caste: c as any })}
+                    onClick={() => {
+                      setFormData({ ...formData, caste: c as any });
+                      if (errors.caste) setErrors({ ...errors, caste: false });
+                    }}
                     className={`py-3 rounded-xl border font-medium transition-all ${formData.caste === c ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
                   >
                     {c}
@@ -143,8 +177,9 @@ export default function DemographicForm({ onSubmit, initialData, lang }: Props) 
                 onChange={e => {
                   const val = e.target.value === '' ? undefined : parseInt(e.target.value);
                   setFormData({ ...formData, annualIncome: isNaN(val as number) ? undefined : val });
+                  if (errors.annualIncome) setErrors({ ...errors, annualIncome: false });
                 }}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all ${errors.annualIncome ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
                 step="10000"
               />
             </div>
@@ -173,8 +208,11 @@ export default function DemographicForm({ onSubmit, initialData, lang }: Props) 
               <label className="text-sm font-medium text-slate-500">{lang === 'en' ? 'What is your primary occupation?' : 'आपका प्राथमिक व्यवसाय क्या है?'}</label>
               <select 
                 value={formData.occupation || ''}
-                onChange={e => setFormData({ ...formData, occupation: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all appearance-none bg-white"
+                onChange={e => {
+                  setFormData({ ...formData, occupation: e.target.value });
+                  if (errors.occupation) setErrors({ ...errors, occupation: false });
+                }}
+                className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all appearance-none bg-white ${errors.occupation ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
               >
                 <option value="" disabled>{lang === 'en' ? 'Select Occupation' : 'व्यवसाय चुनें'}</option>
                 {occupations.map(o => <option key={o} value={o}>{lang === 'hi' ? (o === 'Student' ? 'छात्र' : o === 'Farmer' ? 'किसान' : o === 'Unemployed' ? 'बेरोजगार' : o) : o}</option>)}

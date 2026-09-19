@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import { SCHEMES } from "./src/data";
+import { DemographicProfile, MatchResult } from "./src/types";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -14,15 +15,10 @@ app.use(express.json());
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
-  }
 });
 
 // Local Rule-Based Fallback Engine
-function fallbackMatch(profile: any, lang: string = 'en') {
+function fallbackMatch(profile: DemographicProfile, lang: string = 'en') {
   return SCHEMES.map(scheme => {
     let score = 1.0;
     let reasons: string[] = [];
@@ -140,7 +136,7 @@ app.post("/api/match-schemes", async (req, res) => {
     const matches = JSON.parse(interaction.output_text || "[]");
     
     // Enrich with actual scheme data
-    const enrichedMatches = matches.map((m: any) => ({
+    const enrichedMatches: MatchResult[] = matches.map((m: any) => ({
       ...m,
       scheme: SCHEMES.find(s => s.id === m.schemeId)
     })).filter((m: any) => m.scheme);
@@ -153,7 +149,7 @@ app.post("/api/match-schemes", async (req, res) => {
     const isRateLimit = error.message?.includes('429') || error.message?.includes('Rate limit');
     
     const fallbackResults = fallbackMatch(profile, lang);
-    const enrichedFallback = fallbackResults.map((m: any) => ({
+    const enrichedFallback: MatchResult[] = fallbackResults.map((m: any) => ({
       ...m,
       scheme: SCHEMES.find(s => s.id === m.schemeId),
       isFallback: true,
